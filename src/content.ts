@@ -1,0 +1,274 @@
+let popup: HTMLDivElement | null = null;
+let playBtn: HTMLButtonElement | null = null;
+let copyBtn: HTMLButtonElement | null = null;
+let currentText: string = "";
+
+function createPopup() {
+  if (popup) return;
+  popup = document.createElement("div");
+  popup.id = "voicevox-reader-popup";
+  Object.assign(popup.style, {
+    position: "absolute",
+    zIndex: "2147483647",
+    background: "#333",
+    color: "#fff",
+    padding: "5px 10px",
+    borderRadius: "5px",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+    display: "none",
+    alignItems: "center",
+    gap: "10px",
+    fontFamily: "sans-serif",
+    fontSize: "14px",
+    pointerEvents: "auto"
+  });
+
+  playBtn = document.createElement("button");
+  playBtn.textContent = "▶";
+  Object.assign(playBtn.style, {
+    background: "none",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "16px",
+    padding: "0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "20px",
+    height: "20px"
+  });
+
+  copyBtn = document.createElement("button");
+  copyBtn.textContent = "💾";
+  copyBtn.title = "Save Audio";
+  Object.assign(copyBtn.style, {
+    background: "none",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "16px",
+    padding: "0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "20px",
+    height: "20px"
+  });
+
+  popup.addEventListener("mousedown", (e) => e.stopPropagation());
+  popup.addEventListener("mouseup", (e) => e.stopPropagation());
+
+  playBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (!currentText) return;
+    playBtn!.innerHTML = `<span class="voicevox-loader"></span>`;
+
+    try {
+      const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
+      if (res.error) throw new Error(res.error);
+
+      const audio = new Audio(res.url);
+      audio.play();
+      audio.onended = () => {
+        if (playBtn) playBtn.textContent = "▶";
+      };
+    } catch (err: any) {
+      alert(`VOICEVOX Reader:\n\n${err.message}`);
+      if (playBtn) playBtn.textContent = "▶";
+    }
+  });
+
+  copyBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (!currentText) return;
+    copyBtn!.innerHTML = `<span class="voicevox-loader"></span>`;
+
+    try {
+      const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
+      if (res.error) throw new Error(res.error);
+
+      const dataUrl = res.url;
+      // TODO: change this (Anki integration?)
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `voicevox_${Date.now()}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      copyBtn!.textContent = "✅";
+    } catch (err: any) {
+      alert(`VOICEVOX Reader:\n\n${err.message}`);
+      copyBtn!.textContent = "❌";
+    }
+
+    setTimeout(() => {
+      if (copyBtn) copyBtn.textContent = "💾";
+    }, 2000);
+  });
+
+  popup.appendChild(playBtn);
+  popup.appendChild(copyBtn);
+  document.body.appendChild(popup);
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .voicevox-loader {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      animation: voicevox-spin 1s linear infinite;
+    }
+    @keyframes voicevox-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function getSentenceLimits(text: string, offset: number) {
+  const punctuation = /[.!?。！？\n]/;
+
+  let start = offset;
+  while (start > 0 && !punctuation.test(text[start - 1])) {
+    start--;
+  }
+
+  if (start > 0 && punctuation.test(text[start - 1])) {
+    // don't include previous sentence's punctuation
+  } else if (start > 0) {
+    start++;
+  }
+
+  let end = offset;
+  while (end < text.length && !punctuation.test(text[end])) {
+    end++;
+  }
+  if (end < text.length) end++;
+
+  return { start, end };
+}
+
+let isCtrlPressed = false;
+let currentRange: Range | null = null;
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Control" || e.ctrlKey) isCtrlPressed = true;
+});
+
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Control" || !e.ctrlKey) {
+    isCtrlPressed = false;
+    // don't auto-hide immediately to allow clicking the play button!
+  }
+});
+
+let lastNode: Node | null = null;
+let lastOffset: number = -1;
+
+document.addEventListener("mousemove", (e) => {
+  if (!isCtrlPressed) return;
+
+  let range;
+  if ((document as any).caretPositionFromPoint) {
+    const pos = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+    if (pos) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
+    }
+  } else if ((document as any).caretRangeFromPoint) {
+    range = (document as any).caretRangeFromPoint(e.clientX, e.clientY);
+  }
+
+  if (!range) return;
+
+  const node = range.startContainer;
+  if (node.nodeType !== Node.TEXT_NODE) return;
+
+  const offset = range.startOffset;
+  if (node === lastNode && Math.abs(offset - lastOffset) < 2) return;
+  lastNode = node;
+  lastOffset = offset;
+
+  const text = node.textContent || "";
+  let { start, end } = getSentenceLimits(text, offset);
+
+  const sentence = text.slice(start, end).trim();
+  if (!sentence) {
+    hidePopup();
+    return;
+  }
+
+  currentText = sentence;
+
+  const selection = window.getSelection();
+  if (selection) {
+    selection.removeAllRanges();
+    const newRange = document.createRange();
+
+    let startOffset = start;
+    while (startOffset < end && /\s/.test(text[startOffset])) {
+      startOffset++;
+    }
+
+    newRange.setStart(node, startOffset);
+    newRange.setEnd(node, end);
+    selection.addRange(newRange);
+    currentRange = newRange;
+  }
+
+  showPopup(e.pageX, e.pageY);
+});
+
+function showPopup(x: number, y: number) {
+  createPopup();
+  if (popup && playBtn) {
+    playBtn.textContent = "▶";
+    popup.style.display = "flex";
+    popup.style.left = `${x + 15}px`;
+    popup.style.top = `${y + 15}px`;
+  }
+}
+
+function hidePopup() {
+  if (popup) popup.style.display = "none";
+  currentRange = null;
+  lastNode = null;
+}
+
+document.addEventListener("mousedown", (e) => {
+  const target = e.target as HTMLElement;
+  if (popup && popup.contains(target)) return;
+  hidePopup();
+});
+
+document.addEventListener("mouseup", (e) => {
+  if (isCtrlPressed) return;
+
+  const target = e.target as HTMLElement;
+  if (popup && popup.contains(target)) return;
+
+  const selected = window.getSelection()?.toString().trim();
+  if (selected) {
+    currentText = selected;
+    showPopup(e.pageX, e.pageY);
+  }
+});
+
+browser.runtime.onMessage.addListener((msg: { type: string; url?: string; message?: string }) => {
+  if (msg.type === "play" && msg.url) {
+    if (playBtn) playBtn.textContent = "▶";
+    const audio = new Audio(msg.url);
+    audio.play();
+    audio.onended = () => URL.revokeObjectURL(msg.url!);
+  } else if (msg.type === "error" && msg.message) {
+    if (playBtn) playBtn.textContent = "▶";
+    alert(`VOICEVOX Reader:\n\n${msg.message}`);
+  }
+});

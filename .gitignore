@@ -1,0 +1,21 @@
+# TypeScript build info
+*.tsbuildinfo
+
+# Build output
+dist/
+lib/
+esm/
+
+# Coverage & tests
+coverage/
+playwright-report/
+cypress/videos/
+cypress/screenshots/
+
+# Tool caches
+.eslintcache
+.parcel-cache/
+.rpt2_cache/
+.ts-node-cache/
+
+node_modules

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "VOICEVOX Reader",
+  "version": "1.0",
+  "description": "Read japanese text using VOICEVOX",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Voicevox Reader"
+  }
+}
