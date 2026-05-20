@@ -1,7 +1,18 @@
 const BASE = "http://127.0.0.1:50021";
+const ANKI_URL = "http://127.0.0.1:8765";
 
 const audioCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 10;
+
+async function ankiRequest(action: string, params: any = {}) {
+  const res = await fetch(ANKI_URL, {
+    method: "POST",
+    body: JSON.stringify({ action, version: 6, params })
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.result;
+}
 
 async function generateAudioDataUrl(text: string, speakerId: number): Promise<string> {
   const cacheKey = `${speakerId}:${text}`;
@@ -56,7 +67,6 @@ async function generateAudioDataUrl(text: string, speakerId: number): Promise<st
 
   audioCache.set(cacheKey, dataUrl);
   if (audioCache.size > MAX_CACHE_SIZE) {
-    // Remove the oldest entry (first item in the Map)
     const firstKey = audioCache.keys().next().value;
     if (firstKey) audioCache.delete(firstKey);
   }
@@ -71,6 +81,45 @@ browser.runtime.onMessage.addListener((msg: any) => {
       return generateAudioDataUrl(msg.text, speakerId)
         .then(url => ({ url }))
         .catch(err => ({ error: err.message }));
+    });
+  }
+
+  if (msg.type === "add_to_anki") {
+    return browser.storage.local.get(["enabled", "speakerId", "ankiField"]).then(async ({ enabled = true, speakerId = 1, ankiField = "SentenceAudio" }) => {
+      if (!enabled) return { error: "Extension is disabled" };
+      try {
+        const dataUrl = await generateAudioDataUrl(msg.text, speakerId);
+        const b64Data = dataUrl.split(',')[1];
+        const filename = `voicevox_${Date.now()}.wav`;
+
+        await ankiRequest("storeMediaFile", { filename, data: b64Data });
+
+        const notes = await ankiRequest("findNotes", { query: "added:1" });
+        if (!notes || notes.length === 0) {
+          throw new Error("No notes added today in Anki to update.");
+        }
+        const lastNoteId = Math.max(...notes); // Note ID is essentially a timestamp
+
+        const notesInfo = await ankiRequest("notesInfo", { notes: [lastNoteId] });
+        const note = notesInfo[0];
+        if (!note || !note.fields) throw new Error("Could not fetch note info.");
+
+        const fieldName = ankiField || "SentenceAudio";
+        if (note.fields[fieldName] === undefined) {
+          throw new Error(`Field '${fieldName}' not found on the last added note.`);
+        }
+
+        const oldContent = note.fields[fieldName].value || "";
+        const newContent = oldContent + (oldContent ? " " : "") + `[sound:${filename}]`;
+
+        await ankiRequest("updateNoteFields", {
+          note: { id: lastNoteId, fields: { [fieldName]: newContent } }
+        });
+
+        return { success: true };
+      } catch (err: any) {
+        return { error: err.message };
+      }
     });
   }
 });

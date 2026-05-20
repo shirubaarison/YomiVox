@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "VOICEVOX Reader",
+  "name": "VOICEVOX Reader for Anki",
   "version": "1.0",
-  "description": "Read japanese text using VOICEVOX",
+  "description": "Read japanese text using VOICEVOX and add audio to your last anki added card",
   "permissions": [
     "activeTab",
     "contextMenus",
@@ -10,7 +10,9 @@
   ],
   "host_permissions": [
     "http://127.0.0.1/*",
-    "http://localhost/*"
+    "http://localhost/*",
+    "http://127.0.0.1:8765/*",
+    "http://localhost:8765/*"
   ],
   "background": {
     "scripts": [

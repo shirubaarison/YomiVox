@@ -1,6 +1,16 @@
+const ICONS = {
+  play: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+  save: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+  add: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+  check: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+  error: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F44336" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+  loader: `<span class="voicevox-loader"></span>`
+};
+
 let popup: HTMLDivElement | null = null;
 let playBtn: HTMLButtonElement | null = null;
 let copyBtn: HTMLButtonElement | null = null;
+let ankiBtn: HTMLButtonElement | null = null;
 let currentText: string = "";
 
 function createPopup() {
@@ -24,7 +34,7 @@ function createPopup() {
   });
 
   playBtn = document.createElement("button");
-  playBtn.textContent = "▶";
+  playBtn.innerHTML = ICONS.play;
   Object.assign(playBtn.style, {
     background: "none",
     border: "none",
@@ -40,9 +50,26 @@ function createPopup() {
   });
 
   copyBtn = document.createElement("button");
-  copyBtn.textContent = "💾";
+  copyBtn.innerHTML = ICONS.save;
   copyBtn.title = "Save Audio";
   Object.assign(copyBtn.style, {
+    background: "none",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "16px",
+    padding: "0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "20px",
+    height: "20px"
+  });
+
+  ankiBtn = document.createElement("button");
+  ankiBtn.innerHTML = ICONS.add;
+  ankiBtn.title = "Add to Anki";
+  Object.assign(ankiBtn.style, {
     background: "none",
     border: "none",
     color: "#fff",
@@ -62,54 +89,76 @@ function createPopup() {
   playBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!currentText) return;
-    playBtn!.innerHTML = `<span class="voicevox-loader"></span>`;
-
+    playBtn!.innerHTML = ICONS.loader;
+    
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
       if (res.error) throw new Error(res.error);
-
+      
       const audio = new Audio(res.url);
       audio.play();
       audio.onended = () => {
-        if (playBtn) playBtn.textContent = "▶";
+         if (playBtn) playBtn.innerHTML = ICONS.play;
       };
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
-      if (playBtn) playBtn.textContent = "▶";
+      if (playBtn) playBtn.innerHTML = ICONS.play;
     }
   });
 
   copyBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!currentText) return;
-    copyBtn!.innerHTML = `<span class="voicevox-loader"></span>`;
-
+    copyBtn!.innerHTML = ICONS.loader;
+    
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
       if (res.error) throw new Error(res.error);
-
+      
       const dataUrl = res.url;
-      // TODO: change this (Anki integration?)
+      
+      // Trigger a direct file download instead of copying to clipboard
+      // This allows easy drag-and-drop into Anki from the downloads bar
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `voicevox_${Date.now()}.wav`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-
-      copyBtn!.textContent = "✅";
+      
+      copyBtn!.innerHTML = ICONS.check;
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
-      copyBtn!.textContent = "❌";
+      copyBtn!.innerHTML = ICONS.error;
     }
-
+    
     setTimeout(() => {
-      if (copyBtn) copyBtn.textContent = "💾";
+      if (copyBtn) copyBtn.innerHTML = ICONS.save;
+    }, 2000);
+  });
+
+  ankiBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (!currentText) return;
+    ankiBtn!.innerHTML = ICONS.loader;
+    
+    try {
+      const res = await browser.runtime.sendMessage({ type: "add_to_anki", text: currentText });
+      if (res.error) throw new Error(res.error);
+      ankiBtn!.innerHTML = ICONS.check;
+    } catch (err: any) {
+      alert(`AnkiConnect Error:\n\n${err.message}`);
+      ankiBtn!.innerHTML = ICONS.error;
+    }
+    
+    setTimeout(() => {
+      if (ankiBtn) ankiBtn.innerHTML = ICONS.add;
     }, 2000);
   });
 
   popup.appendChild(playBtn);
   popup.appendChild(copyBtn);
+  popup.appendChild(ankiBtn);
   document.body.appendChild(popup);
 
   const style = document.createElement("style");
@@ -229,7 +278,7 @@ document.addEventListener("mousemove", (e) => {
 function showPopup(x: number, y: number) {
   createPopup();
   if (popup && playBtn) {
-    playBtn.textContent = "▶";
+    playBtn.innerHTML = ICONS.play;
     popup.style.display = "flex";
     popup.style.left = `${x + 15}px`;
     popup.style.top = `${y + 15}px`;
@@ -263,12 +312,12 @@ document.addEventListener("mouseup", (e) => {
 
 browser.runtime.onMessage.addListener((msg: { type: string; url?: string; message?: string }) => {
   if (msg.type === "play" && msg.url) {
-    if (playBtn) playBtn.textContent = "▶";
+    if (playBtn) playBtn.innerHTML = ICONS.play;
     const audio = new Audio(msg.url);
     audio.play();
     audio.onended = () => URL.revokeObjectURL(msg.url!);
   } else if (msg.type === "error" && msg.message) {
-    if (playBtn) playBtn.textContent = "▶";
+    if (playBtn) playBtn.innerHTML = ICONS.play;
     alert(`VOICEVOX Reader:\n\n${msg.message}`);
   }
 });

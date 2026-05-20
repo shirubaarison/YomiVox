@@ -29,17 +29,26 @@ async function init() {
   const avatar = document.getElementById("avatar") as HTMLImageElement;
   const toggle = document.getElementById("extension-toggle") as HTMLInputElement;
   const toggleLabel = document.getElementById("toggle-label") as HTMLSpanElement;
-
+  const ankiFieldInput = document.getElementById("anki-field-input") as HTMLInputElement;
+  
   try {
-    // setup toggle switch
-    const { enabled = true } = await browser.storage.local.get("enabled");
+    // Setup Toggle Switch
+    const { enabled = true, ankiField = "SentenceAudio" } = await browser.storage.local.get(["enabled", "ankiField"]);
     toggle.checked = enabled;
     toggleLabel.textContent = enabled ? "ON" : "OFF";
+    
+    ankiFieldInput.value = ankiField;
 
     toggle.addEventListener("change", async () => {
       const isEnabled = toggle.checked;
       await browser.storage.local.set({ enabled: isEnabled });
       toggleLabel.textContent = isEnabled ? "ON" : "OFF";
+    });
+
+    ankiFieldInput.addEventListener("change", async () => {
+      const newField = ankiFieldInput.value.trim() || "SentenceAudio";
+      await browser.storage.local.set({ ankiField: newField });
+      ankiFieldInput.value = newField;
     });
 
     const res = await fetch(`${POPUP_BASE}/speakers`);
