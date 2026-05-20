@@ -1,7 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/VOICEVOX/voicevox/master/public/icon.png" alt="VOICEVOX Logo" width="120" height="120">
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src ="https://avatars.githubusercontent.com/u/42564322?s=200&v=4" alt="Anki Logo" width="120" height="120">
+  <img src="public/icons/icon-128.png" alt="YomiVox Logo" width="120" height="120">
   <h1>YomiVox</h1>
 </div>
 
