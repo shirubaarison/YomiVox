@@ -117,9 +117,6 @@ select {
   outline: none;
   box-sizing: border-box;
 }
-select:focus {
-  border-color: #666;
-}
 input[type="text"] {
   width: 100%;
   padding: 8px;

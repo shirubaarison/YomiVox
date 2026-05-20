@@ -1,23 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "VOICEVOX Reader for Anki",
-  "version": "1.0",
-  "description": "Read japanese text using VOICEVOX and add audio to your last anki added card",
+  "name": "YomiVox",
+  "version": "1.0.0",
+  "description": "Read Japanese text using VOICEVOX and add audio to the latest Anki card.",
   "permissions": [
     "activeTab",
     "contextMenus",
     "storage"
   ],
   "host_permissions": [
-    "http://127.0.0.1/*",
-    "http://localhost/*",
-    "http://127.0.0.1:8765/*",
-    "http://localhost:8765/*"
+    "http://127.0.0.1:50021/*",
+    "http://127.0.0.1:8765/*"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "type": "module"
   },
   "content_scripts": [
@@ -27,11 +23,23 @@
       ],
       "js": [
         "content.js"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Voicevox Reader"
+    "default_title": "YomiVox"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "yomivox@shirubaarison",
+      "strict_min_version": "128.0"
+    }
   }
 }

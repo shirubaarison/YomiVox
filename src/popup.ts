@@ -1,4 +1,4 @@
-const POPUP_BASE = "http://127.0.0.1:50021";
+import { VOICEVOX_BASE } from "./config.js";
 
 interface Style {
   name: string;
@@ -30,13 +30,13 @@ async function init() {
   const toggle = document.getElementById("extension-toggle") as HTMLInputElement;
   const toggleLabel = document.getElementById("toggle-label") as HTMLSpanElement;
   const ankiFieldInput = document.getElementById("anki-field-input") as HTMLInputElement;
-  
+
   try {
     // Setup Toggle Switch
     const { enabled = true, ankiField = "SentenceAudio" } = await browser.storage.local.get(["enabled", "ankiField"]);
     toggle.checked = enabled;
     toggleLabel.textContent = enabled ? "ON" : "OFF";
-    
+
     ankiFieldInput.value = ankiField;
 
     toggle.addEventListener("change", async () => {
@@ -51,8 +51,10 @@ async function init() {
       ankiFieldInput.value = newField;
     });
 
-    const res = await fetch(`${POPUP_BASE}/speakers`);
-    if (!res.ok) throw new Error("Voicevox not running");
+    const res = await fetch(`${VOICEVOX_BASE}/speakers`);
+    if (!res.ok)
+      throw new Error("Voicevox not running");
+
     const speakers: Speaker[] = await res.json();
 
     charSelect.innerHTML = "";
@@ -83,7 +85,9 @@ async function init() {
     const updateStylesDropdown = (speakerUuid: string) => {
       styleSelect.innerHTML = "";
       const speaker = speakers.find(s => s.speaker_uuid === speakerUuid);
-      if (!speaker) return;
+
+      if (!speaker)
+        return;
 
       for (const style of speaker.styles) {
         const option = document.createElement("option");
@@ -95,7 +99,7 @@ async function init() {
 
     const updateAvatar = async (uuid: string, styleId: number) => {
       try {
-        const infoRes = await fetch(`${POPUP_BASE}/speaker_info?speaker_uuid=${uuid}`);
+        const infoRes = await fetch(`${VOICEVOX_BASE}/speaker_info?speaker_uuid=${uuid}`);
         const info: SpeakerInfo = await infoRes.json();
 
         const styleInfo = info.style_infos.find(s => s.id === styleId);

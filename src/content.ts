@@ -14,9 +14,11 @@ let ankiBtn: HTMLButtonElement | null = null;
 let currentText: string = "";
 
 function createPopup() {
-  if (popup) return;
+  if (popup)
+    return;
   popup = document.createElement("div");
   popup.id = "voicevox-reader-popup";
+
   Object.assign(popup.style, {
     position: "absolute",
     zIndex: "2147483647",
@@ -35,6 +37,7 @@ function createPopup() {
 
   playBtn = document.createElement("button");
   playBtn.innerHTML = ICONS.play;
+
   Object.assign(playBtn.style, {
     background: "none",
     border: "none",
@@ -52,6 +55,7 @@ function createPopup() {
   copyBtn = document.createElement("button");
   copyBtn.innerHTML = ICONS.save;
   copyBtn.title = "Save Audio";
+
   Object.assign(copyBtn.style, {
     background: "none",
     border: "none",
@@ -69,6 +73,7 @@ function createPopup() {
   ankiBtn = document.createElement("button");
   ankiBtn.innerHTML = ICONS.add;
   ankiBtn.title = "Add to Anki";
+
   Object.assign(ankiBtn.style, {
     background: "none",
     border: "none",
@@ -90,50 +95,56 @@ function createPopup() {
     e.stopPropagation();
     if (!currentText) return;
     playBtn!.innerHTML = ICONS.loader;
-    
+
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
-      if (res.error) throw new Error(res.error);
-      
+      if (res.error)
+        throw new Error(res.error);
+
       const audio = new Audio(res.url);
       audio.play();
       audio.onended = () => {
-         if (playBtn) playBtn.innerHTML = ICONS.play;
+        if (playBtn) playBtn.innerHTML = ICONS.play;
       };
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
-      if (playBtn) playBtn.innerHTML = ICONS.play;
+
+      if (playBtn)
+        playBtn.innerHTML = ICONS.play;
     }
   });
 
   copyBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
-    if (!currentText) return;
+
+    if (!currentText)
+      return;
+
     copyBtn!.innerHTML = ICONS.loader;
-    
+
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
-      if (res.error) throw new Error(res.error);
-      
+      if (res.error)
+        throw new Error(res.error);
+
       const dataUrl = res.url;
-      
-      // Trigger a direct file download instead of copying to clipboard
-      // This allows easy drag-and-drop into Anki from the downloads bar
+
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `voicevox_${Date.now()}.wav`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      
+
       copyBtn!.innerHTML = ICONS.check;
     } catch (err: any) {
-      alert(`VOICEVOX Reader:\n\n${err.message}`);
+      alert(`YomiVox:\n\n${err.message}`);
       copyBtn!.innerHTML = ICONS.error;
     }
-    
+
     setTimeout(() => {
-      if (copyBtn) copyBtn.innerHTML = ICONS.save;
+      if (copyBtn)
+        copyBtn.innerHTML = ICONS.save;
     }, 2000);
   });
 
@@ -141,18 +152,21 @@ function createPopup() {
     e.stopPropagation();
     if (!currentText) return;
     ankiBtn!.innerHTML = ICONS.loader;
-    
+
     try {
       const res = await browser.runtime.sendMessage({ type: "add_to_anki", text: currentText });
-      if (res.error) throw new Error(res.error);
+      if (res.error)
+        throw new Error(res.error);
+
       ankiBtn!.innerHTML = ICONS.check;
     } catch (err: any) {
       alert(`AnkiConnect Error:\n\n${err.message}`);
       ankiBtn!.innerHTML = ICONS.error;
     }
-    
+
     setTimeout(() => {
-      if (ankiBtn) ankiBtn.innerHTML = ICONS.add;
+      if (ankiBtn)
+        ankiBtn.innerHTML = ICONS.add;
     }, 2000);
   });
 
@@ -186,12 +200,6 @@ function getSentenceLimits(text: string, offset: number) {
   let start = offset;
   while (start > 0 && !punctuation.test(text[start - 1])) {
     start--;
-  }
-
-  if (start > 0 && punctuation.test(text[start - 1])) {
-    // don't include previous sentence's punctuation
-  } else if (start > 0) {
-    start++;
   }
 
   let end = offset;
@@ -238,10 +246,13 @@ document.addEventListener("mousemove", (e) => {
   if (!range) return;
 
   const node = range.startContainer;
-  if (node.nodeType !== Node.TEXT_NODE) return;
+  if (node.nodeType !== Node.TEXT_NODE)
+    return;
 
   const offset = range.startOffset;
-  if (node === lastNode && Math.abs(offset - lastOffset) < 2) return;
+  if (node === lastNode && Math.abs(offset - lastOffset) < 2)
+    return;
+
   lastNode = node;
   lastOffset = offset;
 
@@ -286,22 +297,28 @@ function showPopup(x: number, y: number) {
 }
 
 function hidePopup() {
-  if (popup) popup.style.display = "none";
+  if (popup)
+    popup.style.display = "none";
+
   currentRange = null;
   lastNode = null;
 }
 
 document.addEventListener("mousedown", (e) => {
   const target = e.target as HTMLElement;
-  if (popup && popup.contains(target)) return;
+  if (popup && popup.contains(target))
+    return;
   hidePopup();
 });
 
 document.addEventListener("mouseup", (e) => {
-  if (isCtrlPressed) return;
+  if (isCtrlPressed)
+    return;
 
   const target = e.target as HTMLElement;
-  if (popup && popup.contains(target)) return;
+
+  if (popup && popup.contains(target)) 
+    return;
 
   const selected = window.getSelection()?.toString().trim();
   if (selected) {
@@ -310,14 +327,21 @@ document.addEventListener("mouseup", (e) => {
   }
 });
 
-browser.runtime.onMessage.addListener((msg: { type: string; url?: string; message?: string }) => {
-  if (msg.type === "play" && msg.url) {
-    if (playBtn) playBtn.innerHTML = ICONS.play;
+type ContentMessage =
+  | { type: "play"; url: string }
+  | { type: "error"; message: string };
+
+browser.runtime.onMessage.addListener((msg: ContentMessage) => {
+  if (msg.type === "play") {
+    if (playBtn)
+      playBtn.innerHTML = ICONS.play;
+
     const audio = new Audio(msg.url);
     audio.play();
-    audio.onended = () => URL.revokeObjectURL(msg.url!);
-  } else if (msg.type === "error" && msg.message) {
-    if (playBtn) playBtn.innerHTML = ICONS.play;
-    alert(`VOICEVOX Reader:\n\n${msg.message}`);
+  } else if (msg.type === "error") {
+    if (playBtn)
+      playBtn.innerHTML = ICONS.play;
+
+    alert(`YomiVox:\n\n${msg.message}`);
   }
 });

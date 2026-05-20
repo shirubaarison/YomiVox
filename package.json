@@ -1,14 +1,14 @@
 {
-  "name": "voicevox-reader",
+  "name": "yomivox",
   "version": "1.0.0",
-  "description": "",
+  "description": "Read Japanese text using VOICEVOX and add audio to your Anki cards.",
   "main": "background.js",
   "scripts": {
     "build": "rm -rf dist && tsc && cp -a public/. dist/",
     "watch": "tsc --watch"
   },
   "keywords": [],
-  "author": "",
+  "author": "shirubaarison",
   "license": "AGPL-3.0",
   "type": "commonjs",
   "devDependencies": {
