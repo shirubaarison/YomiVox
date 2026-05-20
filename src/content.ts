@@ -1,5 +1,6 @@
 const ICONS = {
   play: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+  stop: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>`,
   save: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
   add: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
   check: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
@@ -12,6 +13,16 @@ let playBtn: HTMLButtonElement | null = null;
 let copyBtn: HTMLButtonElement | null = null;
 let ankiBtn: HTMLButtonElement | null = null;
 let currentText: string = "";
+let currentAudio: HTMLAudioElement | null = null;
+
+function stopAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  if (playBtn) playBtn.innerHTML = ICONS.play;
+}
 
 function createPopup() {
   if (popup)
@@ -94,6 +105,12 @@ function createPopup() {
   playBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!currentText) return;
+
+    if (currentAudio) {
+      stopAudio();
+      return;
+    }
+
     playBtn!.innerHTML = ICONS.loader;
 
     try {
@@ -102,13 +119,16 @@ function createPopup() {
         throw new Error(res.error);
 
       const audio = new Audio(res.url);
+      currentAudio = audio;
+      playBtn!.innerHTML = ICONS.stop;
       audio.play();
       audio.onended = () => {
+        currentAudio = null;
         if (playBtn) playBtn.innerHTML = ICONS.play;
       };
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
-
+      currentAudio = null;
       if (playBtn)
         playBtn.innerHTML = ICONS.play;
     }
@@ -289,7 +309,7 @@ document.addEventListener("mousemove", (e) => {
 function showPopup(x: number, y: number) {
   createPopup();
   if (popup && playBtn) {
-    playBtn.innerHTML = ICONS.play;
+    stopAudio();
     popup.style.display = "flex";
     popup.style.left = `${x + 15}px`;
     popup.style.top = `${y + 15}px`;
@@ -297,6 +317,7 @@ function showPopup(x: number, y: number) {
 }
 
 function hidePopup() {
+  stopAudio();
   if (popup)
     popup.style.display = "none";
 
@@ -317,7 +338,7 @@ document.addEventListener("mouseup", (e) => {
 
   const target = e.target as HTMLElement;
 
-  if (popup && popup.contains(target)) 
+  if (popup && popup.contains(target))
     return;
 
   const selected = window.getSelection()?.toString().trim();
@@ -333,15 +354,17 @@ type ContentMessage =
 
 browser.runtime.onMessage.addListener((msg: ContentMessage) => {
   if (msg.type === "play") {
-    if (playBtn)
-      playBtn.innerHTML = ICONS.play;
-
+    stopAudio();
     const audio = new Audio(msg.url);
+    currentAudio = audio;
+    if (playBtn) playBtn.innerHTML = ICONS.stop;
     audio.play();
+    audio.onended = () => {
+      currentAudio = null;
+      if (playBtn) playBtn.innerHTML = ICONS.play;
+    };
   } else if (msg.type === "error") {
-    if (playBtn)
-      playBtn.innerHTML = ICONS.play;
-
+    stopAudio();
     alert(`YomiVox:\n\n${msg.message}`);
   }
 });
