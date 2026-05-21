@@ -3,6 +3,9 @@
   <h1>YomiVox</h1>
 </div>
 
+Adding only sentence cards in Anki sucks, so I made this extension to add audio to those cards.
+My workflow: add an unknown word to Anki with Yomitan, then use this extension to generate audio for the latest card
+
 ## Features
 
 - **Yomitan-Style Selection**: Hold `Ctrl` and hover over any Japanese sentence to instantly select it and bring up the audio popup.
