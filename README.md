@@ -4,21 +4,29 @@
 </div>
 
 Adding only sentence cards in Anki sucks, so I made this extension to add audio to those cards.
+
 My workflow: add an unknown word to Anki with Yomitan, then use this extension to generate audio for the latest card
+
+https://github.com/user-attachments/assets/e6a0a7ef-1129-4330-9cd4-cccba91be90b
+
+
 
 ## Features
 
 - **Yomitan-Style Selection**: Hold `Ctrl` and hover over any Japanese sentence to instantly select it and bring up the audio popup.
 - **AnkiConnect Integration**: Instantly append the generated audio to the last added card in your Anki deck with a single click.
 
+<img width="307" height="467" alt="Extension UI" src="https://github.com/user-attachments/assets/058f68c9-2fe2-4ba9-afc9-6870dd75ee63" />
+<img width="643" height="94" alt="UI when highlight with control key" src="https://github.com/user-attachments/assets/1b9afc48-4088-46e0-9407-66e0b871ab52" />
+
 ## Installation
 
 ### Firefox
 1. Go to the [Releases page](https://github.com/shirubaarison/YomiVox/releases) of this repository.
-2. Download the latest `yomivox.zip` file.
+2. Download the latest `yomivox.xpi` file.
 3. Open a new tab and go to `about:addons` (or click the puzzle piece icon -> Manage Extensions).
 4. Click the **Gear icon** (⚙️) in the top right.
-5. Select **"Install Add-on From File..."** and choose the `yomivox.zip` file you downloaded.
+5. Select **"Install Add-on From File..."** and choose the `yomivox.xpi` file you downloaded.
 
 ## Requirements
 
