@@ -14,6 +14,7 @@ let copyBtn: HTMLButtonElement | null = null;
 let ankiBtn: HTMLButtonElement | null = null;
 let currentText: string = "";
 let currentAudio: HTMLAudioElement | null = null;
+let lastAnkiNoteId: number | null = null;
 
 function stopAudio() {
   if (currentAudio) {
@@ -171,6 +172,17 @@ function createPopup() {
   ankiBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!currentText) return;
+
+    // If already added, open the card in Anki
+    if (lastAnkiNoteId !== null) {
+      try {
+        await browser.runtime.sendMessage({ type: "view_note", noteId: lastAnkiNoteId });
+      } catch (err: any) {
+        alert(`AnkiConnect Error:\n\n${err.message}`);
+      }
+      return;
+    }
+
     ankiBtn!.innerHTML = ICONS.loader;
 
     try {
@@ -178,16 +190,16 @@ function createPopup() {
       if (res.error)
         throw new Error(res.error);
 
+      lastAnkiNoteId = res.noteId ?? null;
       ankiBtn!.innerHTML = ICONS.check;
     } catch (err: any) {
       alert(`AnkiConnect Error:\n\n${err.message}`);
       ankiBtn!.innerHTML = ICONS.error;
+      setTimeout(() => {
+        if (ankiBtn)
+          ankiBtn.innerHTML = ICONS.add;
+      }, 2000);
     }
-
-    setTimeout(() => {
-      if (ankiBtn)
-        ankiBtn.innerHTML = ICONS.add;
-    }, 2000);
   });
 
   popup.appendChild(playBtn);
@@ -310,6 +322,8 @@ function showPopup(x: number, y: number) {
   createPopup();
   if (popup && playBtn) {
     stopAudio();
+    lastAnkiNoteId = null;
+    if (ankiBtn) ankiBtn.innerHTML = ICONS.add;
     popup.style.display = "flex";
     popup.style.left = `${x + 15}px`;
     popup.style.top = `${y + 15}px`;
@@ -332,21 +346,7 @@ document.addEventListener("mousedown", (e) => {
   hidePopup();
 });
 
-document.addEventListener("mouseup", (e) => {
-  if (isCtrlPressed)
-    return;
 
-  const target = e.target as HTMLElement;
-
-  if (popup && popup.contains(target))
-    return;
-
-  const selected = window.getSelection()?.toString().trim();
-  if (selected) {
-    currentText = selected;
-    showPopup(e.pageX, e.pageY);
-  }
-});
 
 type ContentMessage =
   | { type: "play"; url: string }

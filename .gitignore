@@ -19,3 +19,4 @@ cypress/screenshots/
 .ts-node-cache/
 
 node_modules
+*.xpi

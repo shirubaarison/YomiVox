@@ -2,7 +2,8 @@ import { VOICEVOX_BASE, ANKI_URL } from "./config.js";
 
 type Message =
   | { type: "fetch_audio"; text: string }
-  | { type: "add_to_anki"; text: string };
+  | { type: "add_to_anki"; text: string }
+  | { type: "view_note"; noteId: number };
 
 const audioCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 10;
@@ -142,11 +143,17 @@ browser.runtime.onMessage.addListener((msg: Message) => {
           note: { id: lastNoteId, fields: { [fieldName]: newContent } }
         });
 
-        return { success: true };
+        return { success: true, noteId: lastNoteId };
       } catch (err: any) {
         return { error: err.message };
       }
     });
+  }
+
+  if (msg.type === "view_note") {
+    return ankiRequest("guiEditNote", { note: msg.noteId })
+      .then(() => ({ success: true }))
+      .catch((err: any) => ({ error: err.message }));
   }
 });
 
