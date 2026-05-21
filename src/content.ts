@@ -8,6 +8,11 @@ const ICONS = {
   loader: `<span class="voicevox-loader"></span>`
 };
 
+function setIcon(el: HTMLElement, html: string) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  el.replaceChildren(...Array.from(doc.body.childNodes).map(n => document.importNode(n, true)));
+}
+
 let popup: HTMLDivElement | null = null;
 let playBtn: HTMLButtonElement | null = null;
 let copyBtn: HTMLButtonElement | null = null;
@@ -22,7 +27,7 @@ function stopAudio() {
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
-  if (playBtn) playBtn.innerHTML = ICONS.play;
+  if (playBtn) setIcon(playBtn, ICONS.play);
 }
 
 function createPopup() {
@@ -48,7 +53,7 @@ function createPopup() {
   });
 
   playBtn = document.createElement("button");
-  playBtn.innerHTML = ICONS.play;
+  setIcon(playBtn, ICONS.play);
 
   Object.assign(playBtn.style, {
     background: "none",
@@ -65,7 +70,7 @@ function createPopup() {
   });
 
   copyBtn = document.createElement("button");
-  copyBtn.innerHTML = ICONS.save;
+  setIcon(copyBtn, ICONS.save);
   copyBtn.title = "Save Audio";
 
   Object.assign(copyBtn.style, {
@@ -83,7 +88,7 @@ function createPopup() {
   });
 
   ankiBtn = document.createElement("button");
-  ankiBtn.innerHTML = ICONS.add;
+  setIcon(ankiBtn, ICONS.add);
   ankiBtn.title = "Add to Anki";
 
   Object.assign(ankiBtn.style, {
@@ -112,7 +117,7 @@ function createPopup() {
       return;
     }
 
-    playBtn!.innerHTML = ICONS.loader;
+    setIcon(playBtn!, ICONS.loader);
 
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
@@ -121,17 +126,17 @@ function createPopup() {
 
       const audio = new Audio(res.url);
       currentAudio = audio;
-      playBtn!.innerHTML = ICONS.stop;
+      setIcon(playBtn!, ICONS.stop);
       audio.play();
       audio.onended = () => {
         currentAudio = null;
-        if (playBtn) playBtn.innerHTML = ICONS.play;
+        if (playBtn) setIcon(playBtn, ICONS.play);
       };
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
       currentAudio = null;
       if (playBtn)
-        playBtn.innerHTML = ICONS.play;
+        setIcon(playBtn, ICONS.play);
     }
   });
 
@@ -141,7 +146,7 @@ function createPopup() {
     if (!currentText)
       return;
 
-    copyBtn!.innerHTML = ICONS.loader;
+    setIcon(copyBtn!, ICONS.loader);
 
     try {
       const res = await browser.runtime.sendMessage({ type: "fetch_audio", text: currentText });
@@ -157,15 +162,15 @@ function createPopup() {
       a.click();
       document.body.removeChild(a);
 
-      copyBtn!.innerHTML = ICONS.check;
+      setIcon(copyBtn!, ICONS.check);
     } catch (err: any) {
       alert(`YomiVox:\n\n${err.message}`);
-      copyBtn!.innerHTML = ICONS.error;
+      setIcon(copyBtn!, ICONS.error);
     }
 
     setTimeout(() => {
       if (copyBtn)
-        copyBtn.innerHTML = ICONS.save;
+        setIcon(copyBtn, ICONS.save);
     }, 2000);
   });
 
@@ -183,7 +188,7 @@ function createPopup() {
       return;
     }
 
-    ankiBtn!.innerHTML = ICONS.loader;
+    setIcon(ankiBtn!, ICONS.loader);
 
     try {
       const res = await browser.runtime.sendMessage({ type: "add_to_anki", text: currentText });
@@ -191,13 +196,13 @@ function createPopup() {
         throw new Error(res.error);
 
       lastAnkiNoteId = res.noteId ?? null;
-      ankiBtn!.innerHTML = ICONS.check;
+      setIcon(ankiBtn!, ICONS.check);
     } catch (err: any) {
       alert(`AnkiConnect Error:\n\n${err.message}`);
-      ankiBtn!.innerHTML = ICONS.error;
+      setIcon(ankiBtn!, ICONS.error);
       setTimeout(() => {
         if (ankiBtn)
-          ankiBtn.innerHTML = ICONS.add;
+          setIcon(ankiBtn, ICONS.add);
       }, 2000);
     }
   });
@@ -323,7 +328,7 @@ function showPopup(x: number, y: number) {
   if (popup && playBtn) {
     stopAudio();
     lastAnkiNoteId = null;
-    if (ankiBtn) ankiBtn.innerHTML = ICONS.add;
+    if (ankiBtn) setIcon(ankiBtn, ICONS.add);
     popup.style.display = "flex";
     popup.style.left = `${x + 15}px`;
     popup.style.top = `${y + 15}px`;
@@ -346,8 +351,6 @@ document.addEventListener("mousedown", (e) => {
   hidePopup();
 });
 
-
-
 type ContentMessage =
   | { type: "play"; url: string }
   | { type: "error"; message: string };
@@ -357,11 +360,11 @@ browser.runtime.onMessage.addListener((msg: ContentMessage) => {
     stopAudio();
     const audio = new Audio(msg.url);
     currentAudio = audio;
-    if (playBtn) playBtn.innerHTML = ICONS.stop;
+    if (playBtn) setIcon(playBtn, ICONS.stop);
     audio.play();
     audio.onended = () => {
       currentAudio = null;
-      if (playBtn) playBtn.innerHTML = ICONS.play;
+      if (playBtn) setIcon(playBtn, ICONS.play);
     };
   } else if (msg.type === "error") {
     stopAudio();

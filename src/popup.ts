@@ -57,7 +57,7 @@ async function init() {
 
     const speakers: Speaker[] = await res.json();
 
-    charSelect.innerHTML = "";
+    charSelect.replaceChildren();
 
     // populate character dropdown
     for (const speaker of speakers) {
@@ -83,7 +83,7 @@ async function init() {
     }
 
     const updateStylesDropdown = (speakerUuid: string) => {
-      styleSelect.innerHTML = "";
+      styleSelect.replaceChildren();
       const speaker = speakers.find(s => s.speaker_uuid === speakerUuid);
 
       if (!speaker)
@@ -140,8 +140,15 @@ async function init() {
     });
 
   } catch (e) {
-    charSelect.innerHTML = "<option>Error: Is Voicevox running?</option>";
-    styleSelect.innerHTML = "<option>Error</option>";
+    charSelect.replaceChildren();
+    const charError = document.createElement("option");
+    charError.textContent = "Error: Is Voicevox running?";
+    charSelect.appendChild(charError);
+
+    styleSelect.replaceChildren();
+    const styleError = document.createElement("option");
+    styleError.textContent = "Error";
+    styleSelect.appendChild(styleError);
     console.error(e);
   }
 }
