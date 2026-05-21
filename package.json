@@ -1,11 +1,12 @@
 {
   "name": "yomivox",
-  "version": "1.0.0",
-  "description": "Read Japanese text using VOICEVOX and add audio to your Anki cards.",
+  "version": "1.0.1",
+  "description": "Generates Japanese audio via VOICEVOX and attaches it to your latest Anki card.",
   "main": "background.js",
   "scripts": {
     "build": "rm -rf dist && tsc && cp -a public/. dist/",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "package": "npm run build && rm -f yomivox.xpi && cd dist && zip -r ../yomivox.xpi . && cd .."
   },
   "keywords": [],
   "author": "shirubaarison",

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YomiVox",
-  "version": "1.0.0",
-  "description": "Read Japanese text using VOICEVOX and add audio to the latest Anki card.",
+  "version": "1.0.1",
+  "description": "Generates Japanese audio via VOICEVOX and attaches it to your latest Anki card.",
   "permissions": [
     "activeTab",
     "contextMenus",
