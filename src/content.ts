@@ -20,6 +20,22 @@ let ankiBtn: HTMLButtonElement | null = null;
 let currentText: string = "";
 let currentAudio: HTMLAudioElement | null = null;
 let lastAnkiNoteId: number | null = null;
+let isEnabled = true;
+
+browser.storage.local.get("enabled").then(({ enabled }) => {
+  if (enabled !== undefined) {
+    isEnabled = enabled;
+  }
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.enabled) {
+    isEnabled = changes.enabled.newValue;
+    if (!isEnabled) {
+      hidePopup();
+    }
+  }
+});
 
 function stopAudio() {
   if (currentAudio) {
@@ -28,6 +44,7 @@ function stopAudio() {
     currentAudio = null;
   }
   if (playBtn) setIcon(playBtn, ICONS.play);
+  if (popup) popup.style.opacity = "1";
 }
 
 function createPopup() {
@@ -49,7 +66,8 @@ function createPopup() {
     gap: "10px",
     fontFamily: "sans-serif",
     fontSize: "14px",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
+    transition: "opacity 0.2s ease"
   });
 
   playBtn = document.createElement("button");
@@ -108,6 +126,15 @@ function createPopup() {
   popup.addEventListener("mousedown", (e) => e.stopPropagation());
   popup.addEventListener("mouseup", (e) => e.stopPropagation());
 
+  popup.addEventListener("mouseenter", () => {
+    if (popup) popup.style.opacity = "1";
+  });
+  popup.addEventListener("mouseleave", () => {
+    if (popup && currentAudio) {
+      popup.style.opacity = "0.5";
+    }
+  });
+
   playBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!currentText) return;
@@ -127,16 +154,24 @@ function createPopup() {
       const audio = new Audio(res.url);
       currentAudio = audio;
       setIcon(playBtn!, ICONS.stop);
+      if (popup) popup.style.opacity = "0.5";
       audio.play();
       audio.onended = () => {
         currentAudio = null;
         if (playBtn) setIcon(playBtn, ICONS.play);
+        if (popup) popup.style.opacity = "1";
+      };
+      audio.onerror = () => {
+        currentAudio = null;
+        if (playBtn) setIcon(playBtn, ICONS.play);
+        if (popup) popup.style.opacity = "1";
       };
     } catch (err: any) {
       alert(`VOICEVOX Reader:\n\n${err.message}`);
       currentAudio = null;
       if (playBtn)
         setIcon(playBtn, ICONS.play);
+      if (popup) popup.style.opacity = "1";
     }
   });
 
@@ -266,6 +301,10 @@ let lastNode: Node | null = null;
 let lastOffset: number = -1;
 
 document.addEventListener("mousemove", (e) => {
+  if (!isEnabled) {
+    isCtrlPressed = false;
+    return;
+  }
   if (!isCtrlPressed) return;
 
   let range;
@@ -356,15 +395,23 @@ type ContentMessage =
   | { type: "error"; message: string };
 
 browser.runtime.onMessage.addListener((msg: ContentMessage) => {
+  if (!isEnabled) return;
   if (msg.type === "play") {
     stopAudio();
     const audio = new Audio(msg.url);
     currentAudio = audio;
     if (playBtn) setIcon(playBtn, ICONS.stop);
+    if (popup) popup.style.opacity = "0.5";
     audio.play();
     audio.onended = () => {
       currentAudio = null;
       if (playBtn) setIcon(playBtn, ICONS.play);
+      if (popup) popup.style.opacity = "1";
+    };
+    audio.onerror = () => {
+      currentAudio = null;
+      if (playBtn) setIcon(playBtn, ICONS.play);
+      if (popup) popup.style.opacity = "1";
     };
   } else if (msg.type === "error") {
     stopAudio();
