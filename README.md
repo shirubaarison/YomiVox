@@ -49,6 +49,24 @@ To use the `➕` button and send audio directly to your flashcards:
 2. **Set the Target Field**: Open the extension popup by clicking its icon in the Firefox toolbar. Under **"Anki Audio Field"**, type the exact name of the field where you want the audio tag to be appended (e.g., `SentenceAudio`).
 3. **Add to Card**: Click the **Add (➕)** button in the reader popup. The audio file will be saved to your Anki media folder and appended to the last card you added/edited today!
 
+## Development
+
+Run `npm ci` and `npm run build`, then load `dist/manifest.json` as a temporary
+Firefox extension. Run `npm run package` to create the XPI.
+
+- `src/background.ts` registers message handlers and the selection context menu.
+- `src/background/` connects browser events to services.
+- `src/services/` owns VOICEVOX synthesis/cache, speaker queries, and Anki operations.
+- `src/content.ts` connects extension settings, selection, and reader UI.
+- `src/reader/` owns sentence boundaries, hover selection, audio playback, icons,
+  and the floating popup. Each reader instance keeps its state in a closure.
+- `src/popup.ts` controls the toolbar settings UI.
+
+Background and toolbar code use ES modules. Firefox content scripts use classic
+scripts, so reader modules share the `YomiVoxReader` namespace and are listed in
+dependency order in `public/manifest.json`. Keep new reader dependencies before
+their consumers in that list. No bundler is required.
+
 ## Acknowledgments
 
 This extension wouldn't be possible without these amazing projects:

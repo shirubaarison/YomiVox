@@ -24,6 +24,11 @@
         "<all_urls>"
       ],
       "js": [
+        "reader/icons.js",
+        "reader/sentence.js",
+        "reader/player.js",
+        "reader/popup.js",
+        "reader/selection.js",
         "content.js"
       ],
       "run_at": "document_idle"

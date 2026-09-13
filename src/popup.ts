@@ -1,27 +1,4 @@
-import { VOICEVOX_BASE } from "./config.js";
-
-interface Style {
-  name: string;
-  id: number;
-}
-
-interface Speaker {
-  name: string;
-  speaker_uuid: string;
-  styles: Style[];
-}
-
-interface StyleInfo {
-  id: number;
-  icon: string;
-  portrait: string;
-}
-
-interface SpeakerInfo {
-  policy: string;
-  portrait: string;
-  style_infos: StyleInfo[];
-}
+import { getSpeakers, getSpeakerInfo } from "./services/speakers.js";
 
 async function init() {
   const charSelect = document.getElementById("character-select") as HTMLSelectElement;
@@ -51,11 +28,7 @@ async function init() {
       ankiFieldInput.value = newField;
     });
 
-    const res = await fetch(`${VOICEVOX_BASE}/speakers`);
-    if (!res.ok)
-      throw new Error("Voicevox not running");
-
-    const speakers: Speaker[] = await res.json();
+    const speakers = await getSpeakers();
 
     charSelect.replaceChildren();
 
@@ -99,8 +72,7 @@ async function init() {
 
     const updateAvatar = async (uuid: string, styleId: number) => {
       try {
-        const infoRes = await fetch(`${VOICEVOX_BASE}/speaker_info?speaker_uuid=${uuid}`);
-        const info: SpeakerInfo = await infoRes.json();
+        const info = await getSpeakerInfo(uuid);
 
         const styleInfo = info.style_infos.find(s => s.id === styleId);
         const imageBase64 = styleInfo?.icon || info.portrait;
