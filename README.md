@@ -67,6 +67,10 @@ Use Node.js 24 and `npm ci` to install the locked development dependencies.
 - `npm run build` produces the extension in `dist/`.
 
 GitHub Actions runs the checks and build on pushes and pull requests.
+Race tests cover out-of-order synthesis responses, cancelled playback, duplicate
+clicks, stale feedback timers, and shared synthesis requests. Cancelling or hiding
+the reader discards pending UI results; synthesis may finish and populate the
+cache. An Anki submission already sent to the background is allowed to finish.
 ESLint uses the typescript-eslint recommended rules; Prettier handles formatting.
 The namespace restriction is disabled only for the classic reader scripts.
 EditorConfig provides consistent indentation and line endings in supported editors.

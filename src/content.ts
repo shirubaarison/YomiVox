@@ -35,11 +35,15 @@
   });
 
   type ContentMessage =
-    { type: "play"; url: string } | { type: "error"; message: string };
+    | { type: "play"; url: string }
+    | { type: "speak"; text: string }
+    | { type: "error"; message: string };
 
   browser.runtime.onMessage.addListener((msg: ContentMessage) => {
     if (!isEnabled) return;
-    if (msg.type === "play") {
+    if (msg.type === "speak") {
+      reader.speak(msg.text);
+    } else if (msg.type === "play") {
       reader.play(msg.url);
     } else if (msg.type === "error") {
       reader.stop();

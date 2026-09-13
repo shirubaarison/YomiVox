@@ -2,6 +2,7 @@ import { VOICEVOX_BASE } from "../config.js";
 
 const audioCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 10;
+const inFlight = new Map<string, Promise<string>>();
 
 export async function generateAudioDataUrl(
   text: string,
@@ -20,6 +21,24 @@ export async function generateAudioDataUrl(
     return cachedUrl;
   }
 
+  const existing = inFlight.get(cacheKey);
+  if (existing) return existing;
+  const request = synthesize(text, speakerId);
+  inFlight.set(cacheKey, request);
+  try {
+    const dataUrl = await request;
+    audioCache.set(cacheKey, dataUrl);
+    if (audioCache.size > MAX_CACHE_SIZE) {
+      const firstKey = audioCache.keys().next().value;
+      if (firstKey) audioCache.delete(firstKey);
+    }
+    return dataUrl;
+  } finally {
+    inFlight.delete(cacheKey);
+  }
+}
+
+async function synthesize(text: string, speakerId: number): Promise<string> {
   console.log("Starting synthesis for:", text);
 
   const queryRes = await fetch(
@@ -74,13 +93,6 @@ export async function generateAudioDataUrl(
   });
 
   console.log("data url created");
-
-  audioCache.set(cacheKey, dataUrl);
-  if (audioCache.size > MAX_CACHE_SIZE) {
-    const firstKey = audioCache.keys().next().value;
-
-    if (firstKey) audioCache.delete(firstKey);
-  }
 
   return dataUrl;
 }

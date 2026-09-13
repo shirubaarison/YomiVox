@@ -10,8 +10,74 @@ namespace YomiVoxReader {
       if (playBtn) setIcon(playBtn, playing ? ICONS.stop : ICONS.play);
       if (popup) popup.style.opacity = playing ? "0.5" : "1";
     });
-    const stopAudio = () => player.stop();
-    const playAudio = (url: string) => player.play(url);
+    let revision = 0;
+    let visible = false;
+    let ankiPending = false;
+    const pending = new Map<string, symbol>();
+    const latest = new Map<string, symbol>();
+    const stopAudio = () => {
+      pending.delete("play");
+      player.stop();
+    };
+    const playAudio = (url: string) => {
+      stopAudio();
+      player.play(url);
+    };
+
+    function invalidate() {
+      revision++;
+      pending.clear();
+      stopAudio();
+      if (copyBtn) setIcon(copyBtn, ICONS.save);
+      if (ankiBtn) setIcon(ankiBtn, ICONS.add);
+      lastAnkiNoteId = null;
+    }
+
+    async function runAction(
+      action: string,
+      button: HTMLButtonElement,
+      message: { type: string; text?: string; noteId?: number },
+      onSuccess: (res: { url: string; noteId?: number }) => void,
+      resetIcon?: string,
+    ) {
+      if (pending.has(action) || (action === "anki" && ankiPending)) return;
+      const token = Symbol();
+      const startedAt = revision;
+      pending.set(action, token);
+      latest.set(action, token);
+      if (action === "anki") ankiPending = true;
+      const isCurrent = () =>
+        revision === startedAt && pending.get(action) === token;
+      setIcon(button, ICONS.loader);
+      try {
+        const res = await browser.runtime.sendMessage(message);
+        if (!isCurrent()) return;
+        if (res.error) throw new Error(res.error);
+        onSuccess(res);
+      } catch (err: unknown) {
+        if (!isCurrent()) return;
+        alert(
+          `YomiVox:\n\n${err instanceof Error ? err.message : String(err)}`,
+        );
+        setIcon(button, ICONS.error);
+        resetIcon ??= action === "play" ? ICONS.play : ICONS.add;
+      } finally {
+        if (action === "anki") ankiPending = false;
+        if (isCurrent()) {
+          pending.delete(action);
+          if (resetIcon) {
+            setTimeout(() => {
+              if (
+                revision === startedAt &&
+                latest.get(action) === token &&
+                !pending.has(action)
+              )
+                setIcon(button, resetIcon!);
+            }, 2000);
+          }
+        }
+      }
+    }
 
     function createPopup() {
       if (popup) return;
@@ -100,110 +166,52 @@ namespace YomiVoxReader {
         }
       });
 
-      playBtn.addEventListener("click", async (e) => {
+      playBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (!currentText) return;
-
-        if (player.isPlaying) {
+        if (player.isPlaying || pending.has("play")) {
           stopAudio();
           return;
         }
-
-        setIcon(playBtn!, ICONS.loader);
-
-        try {
-          const res = await browser.runtime.sendMessage({
-            type: "fetch_audio",
-            text: currentText,
-          });
-          if (res.error) throw new Error(res.error);
-
-          playAudio(res.url);
-        } catch (err: unknown) {
-          alert(
-            `VOICEVOX Reader:\n\n${err instanceof Error ? err.message : String(err)}`,
-          );
-          player.stop();
-          if (playBtn) setIcon(playBtn, ICONS.play);
-          if (popup) popup.style.opacity = "1";
-        }
+        void runAction(
+          "play",
+          playBtn!,
+          { type: "fetch_audio", text: currentText },
+          (res) => player.play(res.url),
+        );
       });
 
-      copyBtn.addEventListener("click", async (e) => {
+      copyBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-
         if (!currentText) return;
-
-        setIcon(copyBtn!, ICONS.loader);
-
-        try {
-          const res = await browser.runtime.sendMessage({
-            type: "fetch_audio",
-            text: currentText,
-          });
-          if (res.error) throw new Error(res.error);
-
-          const dataUrl = res.url;
-
-          const a = document.createElement("a");
-          a.href = dataUrl;
-          a.download = `voicevox_${Date.now()}.wav`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-
-          setIcon(copyBtn!, ICONS.check);
-        } catch (err: unknown) {
-          alert(
-            `YomiVox:\n\n${err instanceof Error ? err.message : String(err)}`,
-          );
-          setIcon(copyBtn!, ICONS.error);
-        }
-
-        setTimeout(() => {
-          if (copyBtn) setIcon(copyBtn, ICONS.save);
-        }, 2000);
+        void runAction(
+          "save",
+          copyBtn!,
+          { type: "fetch_audio", text: currentText },
+          (res) => {
+            const a = document.createElement("a");
+            a.href = res.url;
+            a.download = `voicevox_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setIcon(copyBtn!, ICONS.check);
+          },
+          ICONS.save,
+        );
       });
 
-      ankiBtn.addEventListener("click", async (e) => {
+      ankiBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (!currentText) return;
-
-        // If already added, open the card in Anki
-        if (lastAnkiNoteId !== null) {
-          try {
-            await browser.runtime.sendMessage({
-              type: "view_note",
-              noteId: lastAnkiNoteId,
-            });
-          } catch (err: unknown) {
-            alert(
-              `AnkiConnect Error:\n\n${err instanceof Error ? err.message : String(err)}`,
-            );
-          }
-          return;
-        }
-
-        setIcon(ankiBtn!, ICONS.loader);
-
-        try {
-          const res = await browser.runtime.sendMessage({
-            type: "add_to_anki",
-            text: currentText,
-          });
-          if (res.error) throw new Error(res.error);
-
-          lastAnkiNoteId = res.noteId ?? null;
+        const message =
+          lastAnkiNoteId === null
+            ? { type: "add_to_anki", text: currentText }
+            : { type: "view_note", noteId: lastAnkiNoteId };
+        void runAction("anki", ankiBtn!, message, (res) => {
+          lastAnkiNoteId = res.noteId ?? lastAnkiNoteId;
           setIcon(ankiBtn!, ICONS.check);
-        } catch (err: unknown) {
-          alert(
-            `AnkiConnect Error:\n\n${err instanceof Error ? err.message : String(err)}`,
-          );
-          setIcon(ankiBtn!, ICONS.error);
-          setTimeout(() => {
-            if (ankiBtn) setIcon(ankiBtn, ICONS.add);
-          }, 2000);
-        }
+        });
       });
 
       popup.appendChild(playBtn);
@@ -233,9 +241,6 @@ namespace YomiVoxReader {
     function showPopup(x: number, y: number) {
       createPopup();
       if (popup && playBtn) {
-        stopAudio();
-        lastAnkiNoteId = null;
-        if (ankiBtn) setIcon(ankiBtn, ICONS.add);
         popup.style.display = "flex";
         popup.style.left = `${x + 15}px`;
         popup.style.top = `${y + 15}px`;
@@ -243,13 +248,16 @@ namespace YomiVoxReader {
     }
 
     function hidePopup() {
-      stopAudio();
+      visible = false;
+      invalidate();
       if (popup) popup.style.display = "none";
     }
 
     return {
       show(text: string, x: number, y: number) {
+        if (!visible || currentText !== text) invalidate();
         currentText = text;
+        visible = true;
         showPopup(x, y);
       },
       hide: hidePopup,
@@ -257,6 +265,13 @@ namespace YomiVoxReader {
         return popup?.contains(target) ?? false;
       },
       play: playAudio,
+      speak(text: string) {
+        invalidate();
+        createPopup();
+        void runAction("play", playBtn!, { type: "fetch_audio", text }, (res) =>
+          player.play(res.url),
+        );
+      },
       stop: stopAudio,
     };
   }
