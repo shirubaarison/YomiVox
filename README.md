@@ -58,7 +58,10 @@ Firefox extension. Run `npm run package` to create the XPI.
 
 Use Node.js 24 and `npm ci` to install the locked development dependencies.
 
-- `npm run check` runs linting, formatting checks, and TypeScript validation.
+- `npm run check` runs linting, formatting checks, TypeScript validation, and regression tests.
+- `npm test` runs isolated regression tests using Node's built-in test runner.
+  Tests exercise the real source with mocked browser, audio, and Anki APIs;
+  Firefox, VOICEVOX, and Anki do not need to be running.
 - `npm run lint:fix` applies automatic ESLint fixes.
 - `npm run format` formats source, configuration, and documentation.
 - `npm run build` produces the extension in `dist/`.
