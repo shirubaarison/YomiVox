@@ -1,16 +1,27 @@
 import { getSpeakers, getSpeakerInfo } from "./services/speakers.js";
 
 async function init() {
-  const charSelect = document.getElementById("character-select") as HTMLSelectElement;
-  const styleSelect = document.getElementById("style-select") as HTMLSelectElement;
+  const charSelect = document.getElementById(
+    "character-select",
+  ) as HTMLSelectElement;
+  const styleSelect = document.getElementById(
+    "style-select",
+  ) as HTMLSelectElement;
   const avatar = document.getElementById("avatar") as HTMLImageElement;
-  const toggle = document.getElementById("extension-toggle") as HTMLInputElement;
-  const toggleLabel = document.getElementById("toggle-label") as HTMLSpanElement;
-  const ankiFieldInput = document.getElementById("anki-field-input") as HTMLInputElement;
+  const toggle = document.getElementById(
+    "extension-toggle",
+  ) as HTMLInputElement;
+  const toggleLabel = document.getElementById(
+    "toggle-label",
+  ) as HTMLSpanElement;
+  const ankiFieldInput = document.getElementById(
+    "anki-field-input",
+  ) as HTMLInputElement;
 
   try {
     // Setup Toggle Switch
-    const { enabled = true, ankiField = "SentenceAudio" } = await browser.storage.local.get(["enabled", "ankiField"]);
+    const { enabled = true, ankiField = "SentenceAudio" } =
+      await browser.storage.local.get(["enabled", "ankiField"]);
     toggle.checked = enabled;
     toggleLabel.textContent = enabled ? "ON" : "OFF";
 
@@ -47,20 +58,21 @@ async function init() {
     const { speakerId = 1 } = await browser.storage.local.get("speakerId");
 
     // find which character owns this style ID
-    let currentSpeaker = speakers.find(s => s.styles.some(style => style.id === speakerId)) || speakers[0];
+    const currentSpeaker =
+      speakers.find((s) => s.styles.some((style) => style.id === speakerId)) ||
+      speakers[0];
     let currentStyleId = speakerId;
 
     // fallback if the saved style ID is somehow invalid
-    if (!currentSpeaker.styles.some(style => style.id === currentStyleId)) {
+    if (!currentSpeaker.styles.some((style) => style.id === currentStyleId)) {
       currentStyleId = currentSpeaker.styles[0].id;
     }
 
     const updateStylesDropdown = (speakerUuid: string) => {
       styleSelect.replaceChildren();
-      const speaker = speakers.find(s => s.speaker_uuid === speakerUuid);
+      const speaker = speakers.find((s) => s.speaker_uuid === speakerUuid);
 
-      if (!speaker)
-        return;
+      if (!speaker) return;
 
       for (const style of speaker.styles) {
         const option = document.createElement("option");
@@ -74,7 +86,7 @@ async function init() {
       try {
         const info = await getSpeakerInfo(uuid);
 
-        const styleInfo = info.style_infos.find(s => s.id === styleId);
+        const styleInfo = info.style_infos.find((s) => s.id === styleId);
         const imageBase64 = styleInfo?.icon || info.portrait;
 
         if (imageBase64) {
@@ -110,7 +122,6 @@ async function init() {
       await browser.storage.local.set({ speakerId: newStyleId });
       await updateAvatar(uuid, newStyleId);
     });
-
   } catch (e) {
     charSelect.replaceChildren();
     const charError = document.createElement("option");

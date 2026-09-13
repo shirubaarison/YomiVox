@@ -3,7 +3,10 @@ import { VOICEVOX_BASE } from "../config.js";
 const audioCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 10;
 
-export async function generateAudioDataUrl(text: string, speakerId: number): Promise<string> {
+export async function generateAudioDataUrl(
+  text: string,
+  speakerId: number,
+): Promise<string> {
   const cacheKey = `${speakerId}:${text}`;
   if (audioCache.has(cacheKey)) {
     console.log("Using cached audio for:", text);
@@ -21,7 +24,7 @@ export async function generateAudioDataUrl(text: string, speakerId: number): Pro
 
   const queryRes = await fetch(
     `${VOICEVOX_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${speakerId}`,
-    { method: "POST" }
+    { method: "POST" },
   );
 
   if (!queryRes.ok) {
@@ -31,17 +34,22 @@ export async function generateAudioDataUrl(text: string, speakerId: number): Pro
 
     console.error("Error details:", textResponse);
 
-    throw new Error("Failed to generate audio query. If this error persists, please try restarting the Voicevox Engine.");
+    throw new Error(
+      "Failed to generate audio query. If this error persists, please try restarting the Voicevox Engine.",
+    );
   }
 
   const query: unknown = await queryRes.json();
   console.log("audio_query response:", query);
 
-  const audioRes = await fetch(`${VOICEVOX_BASE}/synthesis?speaker=${speakerId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(query),
-  });
+  const audioRes = await fetch(
+    `${VOICEVOX_BASE}/synthesis?speaker=${speakerId}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(query),
+    },
+  );
 
   if (!audioRes.ok) {
     console.error(`synthesis failed with status ${audioRes.status}`);
@@ -50,7 +58,9 @@ export async function generateAudioDataUrl(text: string, speakerId: number): Pro
 
     console.error("Error details:", textResponse);
 
-    throw new Error("Failed to synthesize audio. If this error persists, please try restarting the Voicevox Engine.");
+    throw new Error(
+      "Failed to synthesize audio. If this error persists, please try restarting the Voicevox Engine.",
+    );
   }
 
   console.log("synthesis status:", audioRes.status);
@@ -69,8 +79,7 @@ export async function generateAudioDataUrl(text: string, speakerId: number): Pro
   if (audioCache.size > MAX_CACHE_SIZE) {
     const firstKey = audioCache.keys().next().value;
 
-    if (firstKey)
-      audioCache.delete(firstKey);
+    if (firstKey) audioCache.delete(firstKey);
   }
 
   return dataUrl;

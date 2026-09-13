@@ -26,6 +26,12 @@ namespace YomiVoxReader {
       void audio.play().catch(finish);
     }
 
-    return { play, stop, get isPlaying() { return currentAudio !== null; } };
+    return {
+      play,
+      stop,
+      get isPlaying() {
+        return currentAudio !== null;
+      },
+    };
   }
 }

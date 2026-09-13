@@ -9,8 +9,6 @@ My workflow: add an unknown word to Anki with Yomitan, then use this extension t
 
 https://github.com/user-attachments/assets/e6a0a7ef-1129-4330-9cd4-cccba91be90b
 
-
-
 ## Features
 
 - **Yomitan-Style Selection**: Hold `Ctrl` and hover over any Japanese sentence to instantly select it and bring up the audio popup.
@@ -22,6 +20,7 @@ https://github.com/user-attachments/assets/e6a0a7ef-1129-4330-9cd4-cccba91be90b
 ## Installation
 
 ### Firefox
+
 1. Go to the [Releases page](https://github.com/shirubaarison/YomiVox/releases) of this repository.
 2. Download the latest `yomivox.xpi` file.
 3. Open a new tab and go to `about:addons` (or click the puzzle piece icon -> Manage Extensions).
@@ -31,18 +30,21 @@ https://github.com/user-attachments/assets/e6a0a7ef-1129-4330-9cd4-cccba91be90b
 ## Requirements
 
 You must have the **VOICEVOX Engine** running locally on your computer.
+
 - Download and run the VOICEVOX app.
 - Ensure the engine is accessible at `http://127.0.0.1:50021`.
 
 ## Usage
 
 ### Reading Text
+
 1. Hold down the **`Ctrl`** key.
 2. Move your mouse over any Japanese text on a webpage.
 3. The extension will automatically highlight the sentence and display a mini popup next to your cursor.
 4. Click the **Play (▶)** button to hear the audio!
 
 ### Anki Integration
+
 To use the `➕` button and send audio directly to your flashcards:
 
 1. **Install AnkiConnect**: Make sure you have the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) add-on installed in Anki.
@@ -53,6 +55,18 @@ To use the `➕` button and send audio directly to your flashcards:
 
 Run `npm ci` and `npm run build`, then load `dist/manifest.json` as a temporary
 Firefox extension. Run `npm run package` to create the XPI.
+
+Use Node.js 24 and `npm ci` to install the locked development dependencies.
+
+- `npm run check` runs linting, formatting checks, and TypeScript validation.
+- `npm run lint:fix` applies automatic ESLint fixes.
+- `npm run format` formats source, configuration, and documentation.
+- `npm run build` produces the extension in `dist/`.
+
+GitHub Actions runs the checks and build on pushes and pull requests.
+ESLint uses the typescript-eslint recommended rules; Prettier handles formatting.
+The namespace restriction is disabled only for the classic reader scripts.
+EditorConfig provides consistent indentation and line endings in supported editors.
 
 - `src/background.ts` registers message handlers and the selection context menu.
 - `src/background/` connects browser events to services.

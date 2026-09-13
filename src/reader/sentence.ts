@@ -15,5 +15,4 @@ namespace YomiVoxReader {
 
     return { start, end };
   }
-
 }

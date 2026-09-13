@@ -4,6 +4,12 @@
   "description": "Generates Japanese audio via VOICEVOX and attaches it to your latest Anki card.",
   "main": "background.js",
   "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run format:check && npm run typecheck",
     "build": "rm -rf dist && tsc && cp -a public/. dist/",
     "watch": "tsc --watch",
     "package": "npm run build && rm -f yomivox.xpi && cd dist && zip -r ../yomivox.xpi . && cd .."
@@ -13,7 +19,12 @@
   "license": "AGPL-3.0",
   "type": "commonjs",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/firefox-webext-browser": "^143.0.0",
-    "typescript": "^6.0.3"
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0"
   }
 }

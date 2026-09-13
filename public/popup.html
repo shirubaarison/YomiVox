@@ -1,42 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>YomiVox</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <title>YomiVox</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-
-<body>
-  <div class="container">
-    <div class="avatar-container">
-      <img id="avatar" src="" alt="Speaker Avatar" style="display: none;">
+  <body>
+    <div class="container">
+      <div class="avatar-container">
+        <img id="avatar" src="" alt="Speaker Avatar" style="display: none" />
+      </div>
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="extension-toggle" />
+          <span class="slider round"></span>
+        </label>
+        <span id="toggle-label">ON</span>
+      </div>
+      <div class="select-group">
+        <label for="character-select">Character</label>
+        <select id="character-select" disabled>
+          <option>Loading...</option>
+        </select>
+      </div>
+      <div class="select-group">
+        <label for="style-select">Style</label>
+        <select id="style-select" disabled>
+          <option>Loading...</option>
+        </select>
+      </div>
+      <div class="select-group">
+        <label for="anki-field-input">Anki Audio Field</label>
+        <input
+          type="text"
+          id="anki-field-input"
+          placeholder="e.g. SentenceAudio"
+        />
+      </div>
     </div>
-    <div class="toggle-container">
-      <label class="switch">
-        <input type="checkbox" id="extension-toggle">
-        <span class="slider round"></span>
-      </label>
-      <span id="toggle-label">ON</span>
-    </div>
-    <div class="select-group">
-      <label for="character-select">Character</label>
-      <select id="character-select" disabled>
-        <option>Loading...</option>
-      </select>
-    </div>
-    <div class="select-group">
-      <label for="style-select">Style</label>
-      <select id="style-select" disabled>
-        <option>Loading...</option>
-      </select>
-    </div>
-    <div class="select-group">
-      <label for="anki-field-input">Anki Audio Field</label>
-      <input type="text" id="anki-field-input" placeholder="e.g. SentenceAudio">
-    </div>
-  </div>
-  <script type="module" src="popup.js"></script>
-</body>
-
+    <script type="module" src="popup.js"></script>
+  </body>
 </html>

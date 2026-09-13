@@ -17,7 +17,11 @@
     }
   });
 
-  const selection = YomiVoxReader.registerSelection(() => isEnabled, reader.show, hidePopup);
+  const selection = YomiVoxReader.registerSelection(
+    () => isEnabled,
+    reader.show,
+    hidePopup,
+  );
 
   function hidePopup() {
     reader.hide();
@@ -26,14 +30,12 @@
 
   document.addEventListener("mousedown", (e) => {
     const target = e.target as HTMLElement;
-    if (reader.contains(target))
-      return;
+    if (reader.contains(target)) return;
     hidePopup();
   });
 
   type ContentMessage =
-    | { type: "play"; url: string }
-    | { type: "error"; message: string };
+    { type: "play"; url: string } | { type: "error"; message: string };
 
   browser.runtime.onMessage.addListener((msg: ContentMessage) => {
     if (!isEnabled) return;
@@ -44,5 +46,4 @@
       alert(`YomiVox:\n\n${msg.message}`);
     }
   });
-
 })();

@@ -3,26 +3,15 @@
   "name": "YomiVox",
   "version": "1.0.2",
   "description": "Generates Japanese audio via VOICEVOX and attaches it to your latest Anki card.",
-  "permissions": [
-    "activeTab",
-    "contextMenus",
-    "storage"
-  ],
-  "host_permissions": [
-    "http://127.0.0.1:50021/*",
-    "http://127.0.0.1:8765/*"
-  ],
+  "permissions": ["activeTab", "contextMenus", "storage"],
+  "host_permissions": ["http://127.0.0.1:50021/*", "http://127.0.0.1:8765/*"],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
+      "matches": ["<all_urls>"],
       "js": [
         "reader/icons.js",
         "reader/sentence.js",

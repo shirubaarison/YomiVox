@@ -9,33 +9,51 @@ type Message =
 export function registerMessages() {
   browser.runtime.onMessage.addListener((msg: Message) => {
     if (msg.type === "fetch_audio") {
-      return browser.storage.local.get(["enabled", "speakerId"]).then(({ enabled = true, speakerId = 1 }) => {
-        if (!enabled) return { error: "Extension is disabled" };
-        return generateAudioDataUrl(msg.text, speakerId)
-          .then(url => ({ url }))
-          .catch(err => ({ error: err.message }));
-      });
+      return browser.storage.local
+        .get(["enabled", "speakerId"])
+        .then(({ enabled = true, speakerId = 1 }) => {
+          if (!enabled) return { error: "Extension is disabled" };
+          return generateAudioDataUrl(msg.text, speakerId)
+            .then((url) => ({ url }))
+            .catch((err) => ({
+              error: err instanceof Error ? err.message : String(err),
+            }));
+        });
     }
 
     if (msg.type === "add_to_anki") {
-      return browser.storage.local.get(["enabled", "speakerId", "ankiField"]).then(async ({ enabled = true, speakerId = 1, ankiField = "SentenceAudio" }) => {
-        if (!enabled) return { error: "Extension is disabled" };
-        try {
-          const dataUrl = await generateAudioDataUrl(msg.text, speakerId);
-          const lastNoteId = await attachAudioToLatestNote(dataUrl, ankiField);
+      return browser.storage.local
+        .get(["enabled", "speakerId", "ankiField"])
+        .then(
+          async ({
+            enabled = true,
+            speakerId = 1,
+            ankiField = "SentenceAudio",
+          }) => {
+            if (!enabled) return { error: "Extension is disabled" };
+            try {
+              const dataUrl = await generateAudioDataUrl(msg.text, speakerId);
+              const lastNoteId = await attachAudioToLatestNote(
+                dataUrl,
+                ankiField,
+              );
 
-          return { success: true, noteId: lastNoteId };
-        } catch (err: any) {
-          return { error: err.message };
-        }
-      });
+              return { success: true, noteId: lastNoteId };
+            } catch (err: unknown) {
+              return {
+                error: err instanceof Error ? err.message : String(err),
+              };
+            }
+          },
+        );
     }
 
     if (msg.type === "view_note") {
       return viewNote(msg.noteId)
         .then(() => ({ success: true }))
-        .catch((err: any) => ({ error: err.message }));
+        .catch((err: unknown) => ({
+          error: err instanceof Error ? err.message : String(err),
+        }));
     }
   });
-
 }
