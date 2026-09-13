@@ -26,6 +26,7 @@ function harness() {
   let highlighted;
   const selected = [];
   const h = createHarness({
+    HTMLElement: class {},
     Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 },
     getComputedStyle: (el) => ({
       display: el.display,

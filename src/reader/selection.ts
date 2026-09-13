@@ -3,29 +3,45 @@ namespace YomiVoxReader {
     isEnabled: () => boolean,
     onSelect: (text: string, x: number, y: number) => void,
     onHide: () => void,
+    getActivationKey: () => string = () => "Control",
   ) {
-    let isCtrlPressed = false;
+    let pressedKey: string | null = null;
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Control" || e.ctrlKey) isCtrlPressed = true;
+      if (!isEnabled() || e.isComposing) return;
+      const target = e.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || target.closest("input, textarea, select"))
+      )
+        return;
+      if (e.key.toLowerCase() === getActivationKey().toLowerCase()) {
+        pressedKey = getActivationKey();
+      }
     });
 
     document.addEventListener("keyup", (e) => {
-      if (e.key === "Control" || !e.ctrlKey) {
-        isCtrlPressed = false;
+      if (e.key.toLowerCase() === pressedKey?.toLowerCase()) {
+        pressedKey = null;
         // don't auto-hide immediately to allow clicking the play button!
       }
     });
 
     let lastNode: Node | null = null;
     let lastOffset: number = -1;
+    const release = () => {
+      pressedKey = null;
+      lastNode = null;
+    };
+    document.addEventListener("blur", release, true);
+    document.addEventListener("visibilitychange", release);
 
     document.addEventListener("mousemove", (e) => {
       if (!isEnabled()) {
-        isCtrlPressed = false;
+        pressedKey = null;
         return;
       }
-      if (!isCtrlPressed) return;
+      if (pressedKey !== getActivationKey()) return;
 
       let range;
       if (document.caretPositionFromPoint) {
@@ -67,6 +83,7 @@ namespace YomiVoxReader {
 
     return {
       reset() {
+        pressedKey = null;
         lastNode = null;
       },
     };

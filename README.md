@@ -38,6 +38,12 @@ You must have the **VOICEVOX Engine** running locally on your computer.
 
 ### Reading Text
 
+The activation key defaults to **Control**. To change it, open the extension
+toolbar popup, click **Activation key**, and press a letter, Space, or a modifier
+key (Control, Alt, Shift, or Meta). The change applies immediately to open tabs.
+Use your chosen key in place of Ctrl below. Activation is ignored while typing
+in input fields or editable content.
+
 1. Hold down the **`Ctrl`** key.
 2. Move your mouse over any Japanese text on a webpage.
 3. The extension will automatically highlight the sentence and display a mini popup next to your cursor.

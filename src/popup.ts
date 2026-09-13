@@ -1,6 +1,9 @@
 import { getSpeakers, getSpeakerInfo } from "./services/speakers.js";
 
 async function init() {
+  const activationKeyInput = document.getElementById(
+    "activation-key",
+  ) as HTMLInputElement;
   const charSelect = document.getElementById(
     "character-select",
   ) as HTMLSelectElement;
@@ -20,8 +23,29 @@ async function init() {
 
   try {
     // Setup Toggle Switch
-    const { enabled = true, ankiField = "SentenceAudio" } =
-      await browser.storage.local.get(["enabled", "ankiField"]);
+    const {
+      enabled = true,
+      ankiField = "SentenceAudio",
+      activationKey = "Control",
+    } = await browser.storage.local.get([
+      "enabled",
+      "ankiField",
+      "activationKey",
+    ]);
+    activationKeyInput.value = activationKey === " " ? "Space" : activationKey;
+    activationKeyInput.addEventListener("keydown", async (event) => {
+      if (event.key === "Tab" || event.key === "Escape") return;
+      if (
+        event.key.length !== 1 &&
+        !["Control", "Alt", "Shift", "Meta"].includes(event.key)
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      await browser.storage.local.set({ activationKey: key });
+      activationKeyInput.value = key === " " ? "Space" : key;
+    });
     toggle.checked = enabled;
     toggleLabel.textContent = enabled ? "ON" : "OFF";
 

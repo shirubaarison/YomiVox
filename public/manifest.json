@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YomiVox",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Generates Japanese audio via VOICEVOX and attaches it to your latest Anki card.",
   "permissions": ["activeTab", "contextMenus", "storage"],
   "host_permissions": ["http://127.0.0.1:50021/*", "http://127.0.0.1:8765/*"],
