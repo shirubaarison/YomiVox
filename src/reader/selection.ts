@@ -50,10 +50,7 @@ namespace YomiVoxReader {
       lastNode = node;
       lastOffset = offset;
 
-      const text = node.textContent || "";
-      const { start, end } = getSentenceLimits(text, offset);
-
-      const sentence = text.slice(start, end).trim();
+      const sentence = getSentenceRange(node, offset);
       if (!sentence) {
         onHide();
         return;
@@ -62,19 +59,10 @@ namespace YomiVoxReader {
       const selection = window.getSelection();
       if (selection) {
         selection.removeAllRanges();
-        const newRange = document.createRange();
-
-        let startOffset = start;
-        while (startOffset < end && /\s/.test(text[startOffset])) {
-          startOffset++;
-        }
-
-        newRange.setStart(node, startOffset);
-        newRange.setEnd(node, end);
-        selection.addRange(newRange);
+        selection.addRange(sentence.range);
       }
 
-      onSelect(sentence, e.pageX, e.pageY);
+      onSelect(sentence.text, e.pageX, e.pageY);
     });
 
     return {
